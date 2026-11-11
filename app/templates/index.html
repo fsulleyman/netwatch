@@ -16,6 +16,7 @@
             <a href="#dashboard" data-view="dashboard" class="active">Dashboard</a>
             <a href="#system" data-view="system">System Overview</a>
             <a href="#network" data-view="network">Network Monitoring</a>
+            <a href="#device" data-view="device">Your Device</a>
         </nav>
 
         <div class="sidebar-footer">
@@ -43,6 +44,11 @@
             <h2>Welcome to NetWatch</h2>
             <p>Monitor your system performance and resource usage.</p>
             <p>Last updated: <span id="timestamp">Waiting...</span></p>
+            <p class="welcome-note">
+                The figures below describe the <strong>server hosting NetWatch</strong>.
+                To check the computer you are using right now,
+                <a href="#device">open the Your Device tab &rarr;</a>
+            </p>
         </section>
 
         <section class="metrics-grid" id="system" data-views="dashboard system">
@@ -153,6 +159,139 @@
 
         </section>
 
+        <!-- ================= YOUR DEVICE (runs entirely in the visitor's browser) ================= -->
+
+        <section class="panel-section" data-views="device">
+            <div class="notice">
+                Everything on this tab is read by <strong>your browser, on your own computer</strong>.
+                Nothing is uploaded to the server. Browsers deliberately hide live CPU %, disk
+                usage and uptime from websites, so those are covered by the CPU test below
+                and by the "run locally" option at the bottom of this page.
+            </div>
+        </section>
+
+        <section class="metrics-grid" data-views="device">
+
+            <div class="metric-card">
+                <h3>Operating system</h3>
+                <div class="metric-value text" id="dev-os">Detecting...</div>
+                <p id="dev-os-detail">&nbsp;</p>
+            </div>
+
+            <div class="metric-card">
+                <h3>Processor threads</h3>
+                <div class="metric-value" id="dev-cores">-</div>
+                <p>Logical processors reported by the browser</p>
+            </div>
+
+            <div class="metric-card">
+                <h3>Memory (approx.)</h3>
+                <div class="metric-value" id="dev-mem">-</div>
+                <p id="dev-mem-detail">&nbsp;</p>
+            </div>
+
+            <div class="metric-card">
+                <h3>Screen</h3>
+                <div class="metric-value text" id="dev-screen">-</div>
+                <p id="dev-screen-detail">&nbsp;</p>
+            </div>
+
+        </section>
+
+        <section class="panel-section" data-views="device">
+            <h2>Device details</h2>
+            <div class="table-wrap">
+                <table class="process-table device-table">
+                    <tbody id="device-body">
+                        <tr><td colspan="2" class="empty">Reading your device...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel-section" data-views="device">
+            <h2>CPU test</h2>
+            <div class="test-card">
+                <p class="test-intro">
+                    Runs a short maths workload on one core, then on every core at once
+                    (about 3 seconds in total). Higher numbers mean a faster processor.
+                    Close heavy tabs first for a fair result.
+                </p>
+
+                <div class="test-actions">
+                    <button type="button" class="btn" id="cpu-test-btn">Run CPU test</button>
+                    <span class="test-status" id="cpu-test-status" aria-live="polite"></span>
+                </div>
+
+                <div class="test-results">
+                    <div>
+                        <span class="test-label">One core</span>
+                        <span class="test-value" id="bench-single">-</span>
+                    </div>
+                    <div>
+                        <span class="test-label">All cores</span>
+                        <span class="test-value" id="bench-multi">-</span>
+                    </div>
+                    <div>
+                        <span class="test-label">Multi-core speed-up</span>
+                        <span class="test-value" id="bench-scale">-</span>
+                    </div>
+                    <div>
+                        <span class="test-label">Live CPU pressure</span>
+                        <span class="test-value"><span class="badge" id="dev-pressure">Checking...</span></span>
+                    </div>
+                </div>
+
+                <p class="test-foot">
+                    Scores are in millions of operations per second. CPU pressure is the
+                    browser's own live reading (nominal, fair, serious or critical) and is
+                    only available in recent Chrome and Edge on desktop.
+                </p>
+            </div>
+        </section>
+
+        <section class="panel-section" data-views="device">
+            <h2>Connection to this server</h2>
+            <div class="test-card">
+                <div class="test-actions">
+                    <button type="button" class="btn" id="ping-btn">Test connection</button>
+                    <span class="test-status" id="ping-status" aria-live="polite"></span>
+                </div>
+
+                <div class="test-results">
+                    <div>
+                        <span class="test-label">Fastest reply</span>
+                        <span class="test-value" id="ping-min">-</span>
+                    </div>
+                    <div>
+                        <span class="test-label">Average reply</span>
+                        <span class="test-value" id="ping-avg">-</span>
+                    </div>
+                    <div>
+                        <span class="test-label">Slowest reply</span>
+                        <span class="test-value" id="ping-max">-</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel-section" data-views="device">
+            <h2>Want live CPU %, disk and uptime for your own machine?</h2>
+            <div class="test-card">
+                <p class="test-intro">
+                    A website can't read those from your computer, but the same NetWatch app can
+                    run on it. On Windows, open PowerShell (Python and Git must be installed) and run:
+                </p>
+<pre class="code-block"><code>git clone https://github.com/fsulleyman/netwatch.git
+cd netwatch
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python -m flask --app app.routes run --port 5000</code></pre>
+                <p class="test-foot">Then open http://localhost:5000 &mdash; it will show that computer's real figures.</p>
+            </div>
+        </section>
+
         <footer>
             NetWatch System Monitoring | Live Monitoring
         </footer>
@@ -183,6 +322,10 @@
             network: {
                 title: "Network Monitoring",
                 subtitle: "Traffic totals and live speed"
+            },
+            device: {
+                title: "Your Device",
+                subtitle: "What this browser can read about the computer you are using"
             }
         };
 
@@ -210,6 +353,13 @@
 
             // Charts can't size themselves while hidden, so redraw after a switch
             requestAnimationFrame(redrawCharts);
+
+            // The Your Device tab only does work while it is on screen
+            if (view === "device") {
+                startDeviceView();
+            } else {
+                stopDeviceView();
+            }
         }
 
         function viewFromHash() {
@@ -501,6 +651,322 @@
             }
             setTimeout(poll, REFRESH_MS);
         }
+
+        /* ---------- Your Device (everything below runs in the visitor's browser) ---------- */
+
+        const DEVICE_REFRESH_MS = 5000;
+        let deviceTimer = null;
+        let pressureObserver = null;
+        let testRunning = false;
+
+        function guessOS(uad, high) {
+            const ua = navigator.userAgent;
+
+            if (uad && uad.platform === "Windows") {
+                // Windows 11 reports a platform version of 13 or higher
+                const major = parseInt((high.platformVersion || "0").split(".")[0], 10);
+                if (major >= 13) return "Windows 11";
+                if (major > 0) return "Windows 10";
+                return "Windows 10 or 11";
+            }
+            if (uad && uad.platform) return uad.platform;
+
+            if (/Windows NT 10/.test(ua)) return "Windows 10 or 11";
+            if (/Windows/.test(ua)) return "Windows";
+            if (/Android/.test(ua)) return "Android";
+            if (/iPhone|iPad|iPod/.test(ua)) return "iOS";
+            if (/Mac OS X/.test(ua)) return "macOS";
+            if (/CrOS/.test(ua)) return "ChromeOS";
+            if (/Linux/.test(ua)) return "Linux";
+            return navigator.platform || "Unknown";
+        }
+
+        function guessBrowser(uad) {
+            if (uad && uad.brands && uad.brands.length) {
+                const real = uad.brands.filter(b => !/not.?a.?brand/i.test(b.brand));
+                const preferred = real.find(b => /edge|chrome|opera|brave/i.test(b.brand)) || real[0];
+                if (preferred) return preferred.brand + " " + preferred.version;
+            }
+            const ua = navigator.userAgent;
+            let match;
+            if ((match = ua.match(/Edg\/([\d.]+)/))) return "Microsoft Edge " + match[1].split(".")[0];
+            if ((match = ua.match(/Firefox\/([\d.]+)/))) return "Firefox " + match[1].split(".")[0];
+            if ((match = ua.match(/Chrome\/([\d.]+)/))) return "Chrome " + match[1].split(".")[0];
+            if ((match = ua.match(/Version\/([\d.]+).*Safari/))) return "Safari " + match[1].split(".")[0];
+            return "Unknown browser";
+        }
+
+        function guessGPU() {
+            try {
+                const canvas = document.createElement("canvas");
+                const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+                if (!gl) return "Not available";
+                const ext = gl.getExtension("WEBGL_debug_renderer_info");
+                return String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)
+                               : gl.getParameter(gl.RENDERER));
+            } catch (error) {
+                return "Not available";
+            }
+        }
+
+        async function readBattery() {
+            if (!navigator.getBattery) return "Not exposed by this browser";
+            try {
+                const battery = await navigator.getBattery();
+                const level = Math.round(battery.level * 100) + "%";
+                return level + (battery.charging ? " (charging)" : " (on battery)");
+            } catch (error) {
+                return "Not available";
+            }
+        }
+
+        async function readStorage() {
+            if (!navigator.storage || !navigator.storage.estimate) return "Not available";
+            try {
+                const estimate = await navigator.storage.estimate();
+                return (estimate.quota / 1024 ** 3).toFixed(1) + " GB limit set by the browser";
+            } catch (error) {
+                return "Not available";
+            }
+        }
+
+        function addDeviceRow(body, label, value) {
+            const row = body.insertRow();
+            const key = row.insertCell();
+            key.className = "key";
+            key.textContent = label;
+            row.insertCell().textContent = value;
+        }
+
+        async function renderDevice() {
+            const uad = navigator.userAgentData;
+            let high = {};
+
+            if (uad && uad.getHighEntropyValues) {
+                try {
+                    high = await uad.getHighEntropyValues(
+                        ["platformVersion", "architecture", "bitness", "model"]);
+                } catch (error) { /* some browsers refuse; fall back to basics */ }
+            }
+
+            const os = guessOS(uad, high);
+            const browser = guessBrowser(uad);
+            const dpr = window.devicePixelRatio || 1;
+            const threads = navigator.hardwareConcurrency || "Unknown";
+
+            let architecture = "Not exposed by this browser";
+            if (high.architecture) {
+                architecture = high.architecture + (high.bitness ? " " + high.bitness + "-bit" : "");
+            }
+
+            let memory = "Not exposed by this browser";
+            let memoryDetail = "Only Chrome and Edge share this";
+            if (navigator.deviceMemory) {
+                memory = navigator.deviceMemory >= 8 ? "8 GB or more" : navigator.deviceMemory + " GB";
+                memoryDetail = "Browsers round this and cap it at 8 GB";
+            }
+
+            const physicalW = Math.round(screen.width * dpr);
+            const physicalH = Math.round(screen.height * dpr);
+            const screenText = physicalW + "x" + physicalH;
+            const screenDetail = "Display scale " + Math.round(dpr * 100) + "% | "
+                + screen.colorDepth + "-bit colour";
+
+            // Top cards
+            setText("dev-os", os);
+            setText("dev-os-detail", browser);
+            setText("dev-cores", threads);
+            setText("dev-mem", memory);
+            setText("dev-mem-detail", memoryDetail);
+            setText("dev-screen", screenText);
+            setText("dev-screen-detail", screenDetail);
+
+            // Details table
+            const connection = navigator.connection || {};
+            const [battery, storage] = await Promise.all([readBattery(), readStorage()]);
+
+            const body = document.getElementById("device-body");
+            body.replaceChildren();
+
+            addDeviceRow(body, "Operating system", os + (high.platformVersion ? " (build " + high.platformVersion + ")" : ""));
+            addDeviceRow(body, "Browser", browser);
+            addDeviceRow(body, "Processor architecture", architecture);
+            addDeviceRow(body, "Processor threads", String(threads));
+            addDeviceRow(body, "Graphics card", guessGPU());
+            addDeviceRow(body, "Memory (approx.)", memory);
+            addDeviceRow(body, "Screen", screenText + " physical pixels");
+            addDeviceRow(body, "Browser window", window.innerWidth + "x" + window.innerHeight + " px");
+            addDeviceRow(body, "Touch screen", navigator.maxTouchPoints > 0
+                ? "Yes (" + navigator.maxTouchPoints + " touch points)" : "No");
+            addDeviceRow(body, "Battery", battery);
+            addDeviceRow(body, "Online", navigator.onLine ? "Yes" : "No");
+            addDeviceRow(body, "Connection type", connection.effectiveType
+                ? connection.effectiveType.toUpperCase() + " (browser estimate)" : "Not exposed by this browser");
+            addDeviceRow(body, "Estimated download speed", connection.downlink
+                ? connection.downlink + " Mbps (browser estimate)" : "Not exposed by this browser");
+            addDeviceRow(body, "Estimated latency", connection.rtt != null
+                ? connection.rtt + " ms (browser estimate)" : "Not exposed by this browser");
+            addDeviceRow(body, "Language", (navigator.languages || [navigator.language]).join(", "));
+            addDeviceRow(body, "Time zone", Intl.DateTimeFormat().resolvedOptions().timeZone);
+            addDeviceRow(body, "Local time", new Date().toLocaleString());
+            addDeviceRow(body, "Colour theme preference",
+                window.matchMedia("(prefers-color-scheme: dark)").matches ? "Dark" : "Light");
+            addDeviceRow(body, "Storage this site may use", storage);
+        }
+
+        /* Live CPU pressure (Compute Pressure API: Chrome / Edge 125+ on desktop) */
+
+        function setPressure(state) {
+            const badge = document.getElementById("dev-pressure");
+            badge.textContent = state;
+            badge.className = "badge " + state;
+        }
+
+        async function startPressure() {
+            const badge = document.getElementById("dev-pressure");
+
+            if (!("PressureObserver" in window)) {
+                badge.textContent = "Not supported in this browser";
+                badge.className = "badge";
+                return;
+            }
+            if (pressureObserver) return;
+
+            try {
+                pressureObserver = new PressureObserver(records => {
+                    setPressure(records[records.length - 1].state);
+                });
+                await pressureObserver.observe("cpu", { sampleInterval: 1000 });
+            } catch (error) {
+                pressureObserver = null;
+                badge.textContent = "Unavailable here";
+                badge.className = "badge";
+            }
+        }
+
+        function stopPressure() {
+            if (pressureObserver) {
+                pressureObserver.disconnect();
+                pressureObserver = null;
+            }
+        }
+
+        function startDeviceView() {
+            renderDevice();
+            startPressure();
+            if (!deviceTimer) {
+                deviceTimer = setInterval(() => {
+                    if (!document.hidden && !testRunning) renderDevice();
+                }, DEVICE_REFRESH_MS);
+            }
+        }
+
+        function stopDeviceView() {
+            clearInterval(deviceTimer);
+            deviceTimer = null;
+            stopPressure();
+        }
+
+        /* CPU test: a maths loop inside Web Workers (one core, then all cores) */
+
+        const BENCH_SOURCE = `
+            self.onmessage = (event) => {
+                const end = performance.now() + event.data;
+                let x = 0.5, operations = 0;
+                while (performance.now() < end) {
+                    for (let i = 0; i < 20000; i++) {
+                        x = Math.sin(x) * Math.cos(x) + Math.sqrt(i + x * x);
+                    }
+                    operations += 20000;
+                }
+                self.postMessage({ operations, x });
+            };
+        `;
+
+        function runBenchmark(workerCount, milliseconds) {
+            const url = URL.createObjectURL(new Blob([BENCH_SOURCE], { type: "text/javascript" }));
+            const workers = [];
+
+            const jobs = Array.from({ length: workerCount }, () => new Promise((resolve, reject) => {
+                const worker = new Worker(url);
+                workers.push(worker);
+                worker.onmessage = event => resolve(event.data.operations);
+                worker.onerror = reject;
+                worker.postMessage(milliseconds);
+            }));
+
+            return Promise.all(jobs)
+                .then(results => results.reduce((a, b) => a + b, 0) / (milliseconds / 1000) / 1e6)
+                .finally(() => {
+                    workers.forEach(w => w.terminate());
+                    URL.revokeObjectURL(url);
+                });
+        }
+
+        async function runCpuTest() {
+            if (testRunning) return;
+            testRunning = true;
+
+            const button = document.getElementById("cpu-test-btn");
+            button.disabled = true;
+
+            try {
+                if (!window.Worker) throw new Error("This browser cannot run background workers");
+
+                const threads = navigator.hardwareConcurrency || 2;
+
+                setText("cpu-test-status", "Testing one core...");
+                const single = await runBenchmark(1, 1500);
+                setText("bench-single", single.toFixed(1));
+
+                setText("cpu-test-status", "Testing all " + threads + " threads...");
+                const multi = await runBenchmark(threads, 1500);
+                setText("bench-multi", multi.toFixed(1));
+                setText("bench-scale", (multi / single).toFixed(1) + "x");
+
+                setText("cpu-test-status", "Done");
+            } catch (error) {
+                setText("cpu-test-status", "Test could not run: " + error.message);
+            } finally {
+                button.disabled = false;
+                testRunning = false;
+            }
+        }
+
+        /* Connection test: time a few round trips to this server */
+
+        async function runPingTest() {
+            const button = document.getElementById("ping-btn");
+            button.disabled = true;
+            setText("ping-status", "Testing...");
+
+            const times = [];
+            for (let i = 0; i < 8; i++) {
+                const start = performance.now();
+                try {
+                    await fetch("/health?t=" + Date.now() + "-" + i, { cache: "no-store" });
+                    times.push(performance.now() - start);
+                } catch (error) { /* skip failed attempts */ }
+            }
+
+            // The first request includes connection set-up, so leave it out
+            const usable = times.slice(1);
+
+            if (usable.length === 0) {
+                setText("ping-status", "Could not reach the server");
+            } else {
+                const average = usable.reduce((a, b) => a + b, 0) / usable.length;
+                setText("ping-min", Math.round(Math.min(...usable)) + " ms");
+                setText("ping-avg", Math.round(average) + " ms");
+                setText("ping-max", Math.round(Math.max(...usable)) + " ms");
+                setText("ping-status", "Done (" + usable.length + " replies)");
+            }
+            button.disabled = false;
+        }
+
+        document.getElementById("cpu-test-btn").addEventListener("click", runCpuTest);
+        document.getElementById("ping-btn").addEventListener("click", runPingTest);
+
 
         showView(viewFromHash());
         poll();
