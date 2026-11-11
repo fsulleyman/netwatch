@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetWatch | System Monitoring</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <h2>NetWatch<span>.</span></h2>
+
+        <nav id="main-nav">
+            <a href="#dashboard" data-view="dashboard" class="active">Dashboard</a>
+            <a href="#system" data-view="system">System Overview</a>
+            <a href="#network" data-view="network">Network Monitoring</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            System Monitoring Platform
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <h1 id="page-title">System Dashboard</h1>
+                <p id="page-subtitle">Real-time infrastructure monitoring</p>
+            </div>
+
+            <div class="status">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="connection">Connecting...</span>
+            </div>
+        </header>
+
+        <div class="alert-banner hidden" id="alert-banner" role="alert"></div>
+
+        <section class="welcome" id="welcome" data-views="dashboard">
+            <h2>Welcome to NetWatch</h2>
+            <p>Monitor your system performance and resource usage.</p>
+            <p>Last updated: <span id="timestamp">Waiting...</span></p>
+        </section>
+
+        <section class="metrics-grid" id="system" data-views="dashboard system">
+
+            <div class="metric-card" id="card-cpu">
+                <h3>CPU Usage</h3>
+                <div class="metric-value" id="cpu">0%</div>
+                <p id="cpu-details">Processor utilization</p>
+            </div>
+
+            <div class="metric-card" id="card-memory">
+                <h3>Memory Usage</h3>
+                <div class="metric-value" id="memory">0%</div>
+                <p id="memory-details">RAM utilization</p>
+            </div>
+
+            <div class="metric-card" id="card-disk">
+                <h3>Disk Usage</h3>
+                <div class="metric-value" id="disk">0%</div>
+                <p id="disk-details">Storage utilization</p>
+            </div>
+
+            <div class="metric-card">
+                <h3>System Uptime</h3>
+                <div class="metric-value" id="uptime">0</div>
+                <p>Hours since startup</p>
+            </div>
+
+        </section>
+
+        <section class="panel-section" data-views="dashboard system">
+            <h2>Live Trends</h2>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-head">
+                        <h3>CPU usage</h3>
+                        <span class="legend"><i style="background:#60a5fa"></i>%</span>
+                    </div>
+                    <canvas id="chart-cpu" aria-label="CPU usage over the last 3 minutes"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-head">
+                        <h3>Memory usage</h3>
+                        <span class="legend"><i style="background:#a78bfa"></i>%</span>
+                    </div>
+                    <canvas id="chart-memory" aria-label="Memory usage over the last 3 minutes"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel-section" data-views="dashboard system">
+            <h2>Top Processes</h2>
+            <div class="table-wrap">
+                <table class="process-table">
+                    <thead>
+                        <tr>
+                            <th>PID</th>
+                            <th>Name</th>
+                            <th class="num">CPU</th>
+                            <th class="num">Memory</th>
+                        </tr>
+                    </thead>
+                    <tbody id="process-body">
+                        <tr><td colspan="4" class="empty">Waiting for data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="network-section" id="network" data-views="dashboard network">
+
+            <h2>Network Statistics</h2>
+
+            <div class="network-grid network-grid-4">
+
+                <div class="network-card">
+                    <h3>Upload speed</h3>
+                    <div class="metric-value" id="speed-up">0 KB/s</div>
+                </div>
+
+                <div class="network-card">
+                    <h3>Download speed</h3>
+                    <div class="metric-value" id="speed-down">0 KB/s</div>
+                </div>
+
+                <div class="network-card">
+                    <h3>Data Sent</h3>
+                    <div class="metric-value" id="sent">0 MB</div>
+                </div>
+
+                <div class="network-card">
+                    <h3>Data Received</h3>
+                    <div class="metric-value" id="received">0 MB</div>
+                </div>
+
+            </div>
+
+            <div class="chart-card chart-wide">
+                <div class="chart-head">
+                    <h3>Network speed (KB/s)</h3>
+                    <span class="legend">
+                        <i style="background:#22c55e"></i>Download
+                        <i style="background:#f59e0b"></i>Upload
+                    </span>
+                </div>
+                <canvas id="chart-network" aria-label="Network speed over the last 3 minutes"></canvas>
+            </div>
+
+        </section>
+
+        <footer>
+            NetWatch System Monitoring | Live Monitoring
+        </footer>
+
+    </main>
+
+    <script>
+        /* ---------- Settings ---------- */
+
+        const REFRESH_MS = 3000;
+        const HISTORY_POINTS = 60;               // 60 points x 3 s = last 3 minutes
+        const BYTES_PER_MB = 1024 * 1024;
+
+        const ALERT_LIMITS = { cpu: 90, memory: 90, disk: 85 };   // percent
+
+
+        /* ---------- Navigation (Dashboard / System / Network) ---------- */
+
+        const VIEWS = {
+            dashboard: {
+                title: "System Dashboard",
+                subtitle: "Real-time infrastructure monitoring"
+            },
+            system: {
+                title: "System Overview",
+                subtitle: "CPU, memory, disk, uptime and processes"
+            },
+            network: {
+                title: "Network Monitoring",
+                subtitle: "Traffic totals and live speed"
+            }
+        };
+
+        function showView(view) {
+            if (!VIEWS[view]) view = "dashboard";
+
+            document.querySelectorAll("[data-views]").forEach(section => {
+                const allowed = section.dataset.views.split(" ");
+                section.classList.toggle("hidden", !allowed.includes(view));
+            });
+
+            document.querySelectorAll("#main-nav a").forEach(link => {
+                const isActive = link.dataset.view === view;
+                link.classList.toggle("active", isActive);
+                if (isActive) {
+                    link.setAttribute("aria-current", "page");
+                } else {
+                    link.removeAttribute("aria-current");
+                }
+            });
+
+            document.getElementById("page-title").textContent = VIEWS[view].title;
+            document.getElementById("page-subtitle").textContent = VIEWS[view].subtitle;
+            document.title = "NetWatch | " + VIEWS[view].title;
+
+            // Charts can't size themselves while hidden, so redraw after a switch
+            requestAnimationFrame(redrawCharts);
+        }
+
+        function viewFromHash() {
+            return location.hash.replace("#", "") || "dashboard";
+        }
+
+        document.querySelectorAll("#main-nav a").forEach(link => {
+            link.addEventListener("click", event => {
+                event.preventDefault();
+                const view = link.dataset.view;
+                history.pushState(null, "", "#" + view);
+                showView(view);
+            });
+        });
+
+        window.addEventListener("popstate", () => showView(viewFromHash()));
+        window.addEventListener("hashchange", () => showView(viewFromHash()));
+        window.addEventListener("resize", redrawCharts);
+
+
+        /* ---------- Charts (plain canvas, no libraries) ---------- */
+
+        const history_ = { cpu: [], memory: [], down: [], up: [] };
+
+        function pushPoint(list, value) {
+            list.push(value);
+            if (list.length > HISTORY_POINTS) list.shift();
+        }
+
+        function drawChart(canvasId, series, fixedMax) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            if (width === 0 || height === 0) return;     // hidden view
+
+            const dpr = window.devicePixelRatio || 1;
+            if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+            }
+
+            const ctx = canvas.getContext("2d");
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, width, height);
+
+            const pad = { top: 10, right: 10, bottom: 10, left: 38 };
+            const plotW = width - pad.left - pad.right;
+            const plotH = height - pad.top - pad.bottom;
+
+            const allValues = series.flatMap(s => s.values);
+            const max = fixedMax || Math.max(10, ...allValues) * 1.2;
+
+            // Grid lines and y labels
+            ctx.font = "11px system-ui, sans-serif";
+            ctx.textAlign = "right";
+            ctx.textBaseline = "middle";
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i <= 4; i++) {
+                const y = pad.top + (plotH / 4) * i;
+                ctx.strokeStyle = "#263449";
+                ctx.beginPath();
+                ctx.moveTo(pad.left, y);
+                ctx.lineTo(width - pad.right, y);
+                ctx.stroke();
+
+                ctx.fillStyle = "#6b7280";
+                ctx.fillText(Math.round(max - (max / 4) * i), pad.left - 6, y);
+            }
+
+            // Lines
+            series.forEach(s => {
+                if (s.values.length < 2) return;
+
+                const step = plotW / (HISTORY_POINTS - 1);
+                const startX = pad.left + plotW - step * (s.values.length - 1);
+
+                const point = (value, index) => ({
+                    x: startX + step * index,
+                    y: pad.top + plotH - (Math.min(value, max) / max) * plotH
+                });
+
+                // Soft fill under the line
+                ctx.beginPath();
+                s.values.forEach((v, i) => {
+                    const p = point(v, i);
+                    i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+                });
+                const last = point(s.values[s.values.length - 1], s.values.length - 1);
+                const first = point(s.values[0], 0);
+                ctx.lineTo(last.x, pad.top + plotH);
+                ctx.lineTo(first.x, pad.top + plotH);
+                ctx.closePath();
+                ctx.fillStyle = s.color + "22";
+                ctx.fill();
+
+                // Line
+                ctx.beginPath();
+                s.values.forEach((v, i) => {
+                    const p = point(v, i);
+                    i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+                });
+                ctx.strokeStyle = s.color;
+                ctx.lineWidth = 2;
+                ctx.lineJoin = "round";
+                ctx.stroke();
+            });
+        }
+
+        function redrawCharts() {
+            drawChart("chart-cpu", [{ values: history_.cpu, color: "#60a5fa" }], 100);
+            drawChart("chart-memory", [{ values: history_.memory, color: "#a78bfa" }], 100);
+            drawChart("chart-network", [
+                { values: history_.down, color: "#22c55e" },
+                { values: history_.up, color: "#f59e0b" }
+            ]);
+        }
+
+
+        /* ---------- Helpers ---------- */
+
+        function setText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        }
+
+        function setStatus(online) {
+            setText("connection", online ? "System Online" : "Connection Error");
+            document.getElementById("status-dot").classList.toggle("offline", !online);
+        }
+
+        function formatMB(bytes) {
+            return (Number(bytes || 0) / BYTES_PER_MB).toFixed(2) + " MB";
+        }
+
+        function formatRate(bytesPerSecond) {
+            if (bytesPerSecond >= BYTES_PER_MB) {
+                return (bytesPerSecond / BYTES_PER_MB).toFixed(2) + " MB/s";
+            }
+            if (bytesPerSecond >= 1024) {
+                return (bytesPerSecond / 1024).toFixed(1) + " KB/s";
+            }
+            return Math.round(bytesPerSecond) + " B/s";
+        }
+
+
+        /* ---------- Alerts ---------- */
+
+        function updateAlerts(data) {
+            const problems = [];
+
+            if (data.cpu.usage >= ALERT_LIMITS.cpu) {
+                problems.push("CPU is at " + data.cpu.usage + "%");
+            }
+            if (data.memory.percentage >= ALERT_LIMITS.memory) {
+                problems.push("Memory is at " + data.memory.percentage + "%");
+            }
+            if (data.disk.percentage >= ALERT_LIMITS.disk) {
+                problems.push("Disk is at " + data.disk.percentage + "%");
+            }
+
+            const banner = document.getElementById("alert-banner");
+            banner.textContent = problems.length
+                ? "Warning: " + problems.join(" | ")
+                : "";
+            banner.classList.toggle("hidden", problems.length === 0);
+
+            document.getElementById("card-cpu")
+                .classList.toggle("danger", data.cpu.usage >= ALERT_LIMITS.cpu);
+            document.getElementById("card-memory")
+                .classList.toggle("danger", data.memory.percentage >= ALERT_LIMITS.memory);
+            document.getElementById("card-disk")
+                .classList.toggle("danger", data.disk.percentage >= ALERT_LIMITS.disk);
+        }
+
+
+        /* ---------- Process table ---------- */
+
+        function updateProcesses(processes) {
+            const body = document.getElementById("process-body");
+            body.replaceChildren();
+
+            if (!processes || processes.length === 0) {
+                const row = body.insertRow();
+                const cell = row.insertCell();
+                cell.colSpan = 4;
+                cell.className = "empty";
+                cell.textContent = "No process data available";
+                return;
+            }
+
+            processes.forEach(proc => {
+                const row = body.insertRow();
+                row.insertCell().textContent = proc.pid;
+                row.insertCell().textContent = proc.name;
+
+                const cpuCell = row.insertCell();
+                cpuCell.className = "num";
+                cpuCell.textContent = proc.cpu + "%";
+
+                const memCell = row.insertCell();
+                memCell.className = "num";
+                memCell.textContent = proc.memory + "%";
+            });
+        }
+
+
+        /* ---------- Live metrics ---------- */
+
+        let previousNetwork = null;
+
+        function updateNetworkSpeed(network) {
+            const now = performance.now();
+
+            if (previousNetwork) {
+                const seconds = (now - previousNetwork.time) / 1000;
+
+                if (seconds > 0) {
+                    // Counters reset on reboot, so never show a negative speed
+                    const up = Math.max(0, (network.bytes_sent - previousNetwork.sent) / seconds);
+                    const down = Math.max(0, (network.bytes_recv - previousNetwork.recv) / seconds);
+
+                    setText("speed-up", formatRate(up));
+                    setText("speed-down", formatRate(down));
+
+                    pushPoint(history_.up, up / 1024);
+                    pushPoint(history_.down, down / 1024);
+                }
+            }
+
+            previousNetwork = {
+                sent: network.bytes_sent,
+                recv: network.bytes_recv,
+                time: now
+            };
+        }
+
+        async function updateDashboard() {
+            try {
+                const response = await fetch("/api/metrics", { cache: "no-store" });
+
+                if (!response.ok) {
+                    throw new Error("Unable to retrieve metrics (HTTP " + response.status + ")");
+                }
+
+                const data = await response.json();
+
+                setStatus(true);
+
+                setText("cpu", data.cpu.usage + "%");
+                setText("cpu-details", data.cpu.cores + " cores");
+
+                setText("memory", data.memory.percentage + "%");
+                setText("memory-details",
+                    data.memory.used + " GB used of " + data.memory.total + " GB");
+
+                setText("disk", data.disk.percentage + "%");
+                setText("disk-details",
+                    data.disk.used + " GB used of " + data.disk.total + " GB");
+
+                setText("uptime", data.uptime + " hrs");
+
+                setText("sent", formatMB(data.network.bytes_sent));
+                setText("received", formatMB(data.network.bytes_recv));
+
+                setText("timestamp", data.timestamp);
+
+                pushPoint(history_.cpu, data.cpu.usage);
+                pushPoint(history_.memory, data.memory.percentage);
+                updateNetworkSpeed(data.network);
+
+                updateProcesses(data.processes);
+                updateAlerts(data);
+                redrawCharts();
+
+            } catch (error) {
+                setStatus(false);
+                console.error(error);
+            }
+        }
+
+        // Wait for each request to finish before scheduling the next one.
+        // Pause while the browser tab is hidden.
+        async function poll() {
+            if (!document.hidden) {
+                await updateDashboard();
+            }
+            setTimeout(poll, REFRESH_MS);
+        }
+
+        showView(viewFromHash());
+        poll();
+    </script>
+
+</body>
+</html>

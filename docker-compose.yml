@@ -1,0 +1,10 @@
+
+services:
+  netwatch:
+    build: .
+    container_name: netwatch-app
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
